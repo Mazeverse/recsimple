@@ -1,72 +1,17 @@
-<!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#0b1020">
-  <title>RecSimple — Simple Browser Recorder</title>
-  <meta name="description" content="Private, ad-free browser audio recorder with 3-minute split recordings.">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-<main class="app">
-<section class="card">
-  <div class="brand">
-    <div class="logo">●</div>
-    <div><h1>RecSimple</h1><p>광고 없이, 브라우저에서 바로 녹음.</p></div>
-  </div>
-
-  <div class="notice">녹음은 서버로 업로드되지 않습니다. 브라우저 안에서 처리됩니다.</div>
-
-  <div class="options">
-    <label class="option">
-      <input id="systemAudio" type="checkbox" checked>
-      <span><strong>PC / 탭 소리</strong><small>공유 창에서 “오디오 공유”를 켜세요.</small></span>
-    </label>
-    <label class="option">
-      <input id="micAudio" type="checkbox">
-      <span><strong>마이크도 함께 녹음</strong><small>내 목소리까지 같이 저장합니다.</small></span>
-    </label>
-    <div class="option static">
-      <span><strong>3분 자동 분할</strong><small>녹음은 끊지 않고 계속되며, 3분마다 번역용 파일이 추가됩니다.</small></span>
-    </div>
-  </div>
-
-  <div class="timer" id="timer">00:00:00</div>
-  <div class="status" id="status">준비됨</div>
-
-  <div class="controls">
-    <button id="startBtn" class="primary">● 녹음 시작</button>
-    <button id="pauseBtn" disabled>Ⅱ 일시정지</button>
-    <button id="stopBtn" disabled>■ 종료</button>
-  </div>
-
-  <section id="segmentsBox" class="segments hidden">
-    <h2>3분 분할 녹음</h2>
-    <p>완료된 구간은 회의가 계속되는 동안에도 바로 저장할 수 있습니다.</p>
-    <div id="segments"></div>
-  </section>
-
-  <section id="fullBox" class="result hidden">
-    <h2>전체 녹음</h2>
-    <p>종료 후 처음부터 끝까지 하나의 파일로 저장할 수 있습니다.</p>
-    <audio id="fullPreview" controls></audio>
-    <a id="fullDownload" class="download" download>전체 녹음 저장</a>
-  </section>
-
-  <details>
-    <summary>Google Meet 녹음 방법</summary>
-    <ol>
-      <li>Meet을 켜둔 상태에서 <b>녹음 시작</b>을 누릅니다.</li>
-      <li><b>Chrome 탭</b>에서 Google Meet 탭을 선택합니다.</li>
-      <li><b>탭 오디오와 함께 공유</b>를 켭니다.</li>
-      <li>3분마다 분할 파일이 자동 생성됩니다.</li>
-      <li>회의 종료 후 <b>종료</b>를 누르면 전체 파일도 생성됩니다.</li>
-    </ol>
-  </details>
-  <p class="foot">Chrome / Edge 권장 · 중요한 회의는 먼저 10초 테스트 권장</p>
-</section>
-</main>
-<script src="app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RecSimple</title><link rel="stylesheet" href="style.css"></head>
+<body><main class="app"><section class="card">
+<div class="brand"><div class="logo">●</div><div><h1>RecSimple</h1><p>광고 없이, 브라우저에서 바로 녹음.</p></div></div>
+<div class="notice">녹음은 서버로 업로드되지 않습니다. 브라우저 안에서 처리됩니다.</div>
+<div class="options">
+<label class="option"><input id="systemAudio" type="checkbox" checked><span><strong>PC / 탭 소리</strong><small>공유 창에서 “오디오 공유”를 켜세요.</small></span></label>
+<label class="option"><input id="micAudio" type="checkbox"><span><strong>마이크도 함께 녹음</strong><small>내 목소리까지 같이 저장합니다.</small></span></label>
+<div class="option static"><span><strong>3분 자동 분할</strong><small>각 3분 파일을 독립적으로 생성하고, 종료 시 전체본도 만듭니다.</small></span></div>
+</div>
+<div class="timer" id="timer">00:00:00</div><div class="status" id="status">준비됨</div>
+<div class="controls"><button id="startBtn" class="primary">● 녹음 시작</button><button id="pauseBtn" disabled>Ⅱ 일시정지</button><button id="stopBtn" disabled>■ 종료</button></div>
+<section id="segmentsBox" class="segments hidden"><h2>3분 분할 녹음</h2><div id="segments"></div></section>
+<section id="fullBox" class="result hidden"><h2>전체 녹음</h2><audio id="fullPreview" controls></audio><a id="fullDownload" class="download" download>전체 녹음 저장</a></section>
+<p class="foot">Chrome / Edge 권장 · 중요한 회의는 먼저 테스트하세요.</p>
+</section></main><script src="app.js"></script></body></html>

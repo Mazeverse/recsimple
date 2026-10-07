@@ -1,17 +1,11 @@
-# RecSimple v2
+# RecSimple v3 (fixed)
 
-Simple, private, ad-free browser audio recorder.
-
-## Features
-- Record Chrome/Edge tab audio
+- Continuous full recording
+- Independent 3-minute recording segments
+- Full recording generated after Stop
 - Optional microphone mixing
-- Continuous recording
-- Automatic 3-minute split files while recording
-- Full recording file after Stop
-- Pause / resume
 - No server upload
 
-## Meet
-Select the Google Meet Chrome tab and enable **Share tab audio**.
+This version uses two MediaRecorder instances: one for the complete recording and one that restarts every 3 minutes, so each split file is independently playable.
 
-For important meetings, do a short test first and make sure recording is permitted by the participants/meeting policy.
+Use Chrome/Edge and enable tab audio when selecting Google Meet.
