@@ -1,17 +1,17 @@
-# RecSimple
+# RecSimple v2
 
-A simple, private, ad-free browser audio recorder.
+Simple, private, ad-free browser audio recorder.
 
-- Record browser/system audio using screen sharing
+## Features
+- Record Chrome/Edge tab audio
 - Optional microphone mixing
+- Continuous recording
+- Automatic 3-minute split files while recording
+- Full recording file after Stop
 - Pause / resume
-- Local preview and download
 - No server upload
 
-## Run
+## Meet
+Select the Google Meet Chrome tab and enable **Share tab audio**.
 
-Open `index.html` locally, or deploy the repository directly to Vercel as a static site.
-
-> Browser audio capture behavior varies by browser and operating system. Chrome or Edge is recommended. When selecting a tab/screen, enable the audio sharing option.
-
-Please make sure you have permission from meeting participants before recording.
+For important meetings, do a short test first and make sure recording is permitted by the participants/meeting policy.

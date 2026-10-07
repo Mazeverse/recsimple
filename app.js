@@ -5,109 +5,153 @@ const systemAudio=document.getElementById("systemAudio");
 const micAudio=document.getElementById("micAudio");
 const timer=document.getElementById("timer");
 const statusEl=document.getElementById("status");
-const result=document.getElementById("result");
-const preview=document.getElementById("preview");
-const downloadBtn=document.getElementById("downloadBtn");
+const segmentsBox=document.getElementById("segmentsBox");
+const segmentsEl=document.getElementById("segments");
+const fullBox=document.getElementById("fullBox");
+const fullPreview=document.getElementById("fullPreview");
+const fullDownload=document.getElementById("fullDownload");
 
-let recorder, chunks=[], displayStream, micStream, mixedStream, audioContext;
-let startedAt=0, pausedAt=0, totalPaused=0, timerId;
+const SPLIT_MS=3*60*1000;
+let recorder, displayStream, micStream, audioContext, recordingStream;
+let fullChunks=[], segmentChunks=[], segmentNo=1;
+let startedAt=0, pauseStarted=0, totalPaused=0, timerId=null, splitTimer=null;
+let currentSegmentStartedAt=0;
+let stopped=false;
 
-function formatTime(ms){
-  const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
-  return [h,m,sec].map(v=>String(v).padStart(2,"0")).join(":");
+function fmt(ms){
+  const s=Math.max(0,Math.floor(ms/1000));
+  return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(v=>String(v).padStart(2,"0")).join(":");
 }
-function startTimer(){
-  timerId=setInterval(()=>{
-    const now=Date.now();
-    timer.textContent=formatTime(now-startedAt-totalPaused);
-  },250);
+function safeStamp(){
+  return new Date().toISOString().replace(/[:.]/g,"-");
 }
-function stopTracks(){
-  [displayStream,micStream,mixedStream].forEach(s=>s?.getTracks().forEach(t=>t.stop()));
+function cleanup(){
+  [displayStream,micStream,recordingStream].forEach(s=>s?.getTracks().forEach(t=>t.stop()));
   if(audioContext && audioContext.state!=="closed") audioContext.close();
+}
+function addSegment(blob, number, startMs, endMs){
+  if(!blob.size) return;
+  segmentsBox.classList.remove("hidden");
+  const url=URL.createObjectURL(blob);
+  const row=document.createElement("div");
+  row.className="segment";
+  const info=document.createElement("div");
+  info.className="segment-info";
+  const title=document.createElement("strong");
+  title.textContent=`구간 ${String(number).padStart(2,"0")} · ${fmt(startMs)} ~ ${fmt(endMs)}`;
+  const sub=document.createElement("small");
+  sub.textContent="회의 중 바로 저장해서 번역용으로 사용할 수 있습니다.";
+  info.append(title,sub);
+  const a=document.createElement("a");
+  a.className="download";
+  a.href=url;
+  a.download=`recsimple-part-${String(number).padStart(2,"0")}-${safeStamp()}.webm`;
+  a.textContent="구간 저장";
+  row.append(info,a);
+  segmentsEl.appendChild(row);
+}
+function finalizeSegment(){
+  if(segmentChunks.length===0) return;
+  const type=recorder?.mimeType || "audio/webm";
+  const elapsed=Date.now()-startedAt-totalPaused;
+  const blob=new Blob(segmentChunks,{type});
+  addSegment(blob,segmentNo,currentSegmentStartedAt,elapsed);
+  segmentChunks=[];
+  segmentNo++;
+  currentSegmentStartedAt=elapsed;
+}
+function scheduleSplit(){
+  clearInterval(splitTimer);
+  splitTimer=setInterval(()=>{
+    if(recorder?.state==="recording"){
+      recorder.requestData();
+      setTimeout(finalizeSegment,100);
+    }
+  },SPLIT_MS);
+}
+function beginClock(){
+  clearInterval(timerId);
+  timerId=setInterval(()=>{
+    const extra=recorder?.state==="paused" ? Date.now()-pauseStarted : 0;
+    timer.textContent=fmt(Date.now()-startedAt-totalPaused-extra);
+  },250);
 }
 
 startBtn.onclick=async()=>{
   try{
-    result.classList.add("hidden");
-    chunks=[];
     if(!systemAudio.checked && !micAudio.checked){
-      alert("PC/탭 소리 또는 마이크 중 하나를 선택하세요.");
-      return;
+      alert("PC/탭 소리 또는 마이크 중 하나를 선택하세요."); return;
     }
+    stopped=false; fullChunks=[]; segmentChunks=[]; segmentNo=1;
+    segmentsEl.innerHTML=""; segmentsBox.classList.add("hidden"); fullBox.classList.add("hidden");
 
-    let tracks=[];
     if(systemAudio.checked){
-      displayStream=await navigator.mediaDevices.getDisplayMedia({
-        video:true,
-        audio:true
-      });
+      displayStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
       if(displayStream.getAudioTracks().length===0){
         displayStream.getTracks().forEach(t=>t.stop());
-        alert('오디오가 공유되지 않았습니다.\n공유 창에서 "탭 오디오 공유" 또는 "시스템 오디오 공유"를 켜주세요.');
-        return;
+        alert('오디오가 공유되지 않았습니다.\n"탭 오디오와 함께 공유"를 켜주세요.'); return;
       }
     }
-
     if(micAudio.checked){
       micStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
     }
 
+    let audioTracks=[];
     if(systemAudio.checked && micAudio.checked){
       audioContext=new AudioContext();
-      const destination=audioContext.createMediaStreamDestination();
-      audioContext.createMediaStreamSource(displayStream).connect(destination);
-      audioContext.createMediaStreamSource(micStream).connect(destination);
-      mixedStream=destination.stream;
-      tracks=mixedStream.getAudioTracks();
+      const dest=audioContext.createMediaStreamDestination();
+      audioContext.createMediaStreamSource(displayStream).connect(dest);
+      audioContext.createMediaStreamSource(micStream).connect(dest);
+      recordingStream=dest.stream;
+      audioTracks=recordingStream.getAudioTracks();
     }else if(systemAudio.checked){
-      tracks=displayStream.getAudioTracks();
+      audioTracks=displayStream.getAudioTracks();
     }else{
-      tracks=micStream.getAudioTracks();
+      audioTracks=micStream.getAudioTracks();
     }
 
-    const audioOnly=new MediaStream(tracks);
-    const preferred=[
-      "audio/webm;codecs=opus",
-      "audio/webm",
-      "audio/ogg;codecs=opus"
-    ].find(t=>MediaRecorder.isTypeSupported(t));
+    const audioOnly=new MediaStream(audioTracks);
+    const preferred=["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus"].find(t=>MediaRecorder.isTypeSupported(t));
+    recorder=new MediaRecorder(audioOnly,preferred?{mimeType:preferred}:undefined);
 
-    recorder=new MediaRecorder(audioOnly, preferred?{mimeType:preferred}:undefined);
-    recorder.ondataavailable=e=>{if(e.data.size) chunks.push(e.data)};
+    recorder.ondataavailable=e=>{
+      if(e.data && e.data.size){
+        fullChunks.push(e.data);
+        segmentChunks.push(e.data);
+      }
+    };
     recorder.onstop=()=>{
-      clearInterval(timerId);
-      const type=recorder.mimeType||"audio/webm";
-      const blob=new Blob(chunks,{type});
-      const url=URL.createObjectURL(blob);
-      preview.src=url;
-      downloadBtn.href=url;
-      const stamp=new Date().toISOString().replace(/[:.]/g,"-");
-      downloadBtn.download=`recsimple-${stamp}.webm`;
-      result.classList.remove("hidden");
-      statusEl.textContent="녹음 완료";
-      startBtn.disabled=false;
-      pauseBtn.disabled=true;
-      stopBtn.disabled=true;
-      pauseBtn.textContent="Ⅱ 일시정지";
-      stopTracks();
+      if(stopped) return;
+      stopped=true;
+      clearInterval(timerId); clearInterval(splitTimer);
+      recorder.requestData?.();
+      setTimeout(()=>{
+        finalizeSegment();
+        const type=recorder.mimeType||"audio/webm";
+        const fullBlob=new Blob(fullChunks,{type});
+        const url=URL.createObjectURL(fullBlob);
+        fullPreview.src=url;
+        fullDownload.href=url;
+        fullDownload.download=`recsimple-full-${safeStamp()}.webm`;
+        fullBox.classList.remove("hidden");
+        statusEl.textContent="녹음 완료 · 전체 파일 준비됨";
+        startBtn.disabled=false; pauseBtn.disabled=true; stopBtn.disabled=true;
+        pauseBtn.textContent="Ⅱ 일시정지";
+        cleanup();
+      },150);
     };
 
-    recorder.start(1000);
-    startedAt=Date.now(); totalPaused=0; pausedAt=0;
-    timer.textContent="00:00:00";
-    startTimer();
-    statusEl.textContent="녹음 중";
-    startBtn.disabled=true;
-    pauseBtn.disabled=false;
-    stopBtn.disabled=false;
+    recorder.start(1000); // 1초 단위 데이터 생성: 전체 파일과 3분 조각 모두 유지
+    startedAt=Date.now(); totalPaused=0; pauseStarted=0; currentSegmentStartedAt=0;
+    timer.textContent="00:00:00"; beginClock(); scheduleSplit();
+    statusEl.textContent="녹음 중 · 3분마다 자동 분할";
+    startBtn.disabled=true; pauseBtn.disabled=false; stopBtn.disabled=false;
 
     displayStream?.getVideoTracks()[0]?.addEventListener("ended",()=>{
-      if(recorder?.state!=="inactive") recorder.stop();
+      if(recorder && recorder.state!=="inactive") recorder.stop();
     });
   }catch(err){
-    console.error(err);
-    stopTracks();
+    console.error(err); cleanup();
     statusEl.textContent="취소됨 또는 권한 오류";
   }
 };
@@ -115,18 +159,13 @@ startBtn.onclick=async()=>{
 pauseBtn.onclick=()=>{
   if(!recorder) return;
   if(recorder.state==="recording"){
-    recorder.pause();
-    pausedAt=Date.now();
-    pauseBtn.textContent="▶ 계속";
-    statusEl.textContent="일시정지";
+    recorder.pause(); pauseStarted=Date.now();
+    pauseBtn.textContent="▶ 계속"; statusEl.textContent="일시정지";
   }else if(recorder.state==="paused"){
-    recorder.resume();
-    totalPaused+=Date.now()-pausedAt;
-    pauseBtn.textContent="Ⅱ 일시정지";
-    statusEl.textContent="녹음 중";
+    recorder.resume(); totalPaused+=Date.now()-pauseStarted;
+    pauseBtn.textContent="Ⅱ 일시정지"; statusEl.textContent="녹음 중 · 3분마다 자동 분할";
   }
 };
-
 stopBtn.onclick=()=>{
   if(recorder && recorder.state!=="inactive") recorder.stop();
 };
