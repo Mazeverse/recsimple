@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#111827" />
+  <title>RecSimple — Simple Browser Recorder</title>
+  <meta name="description" content="A simple, private, ad-free recorder that runs entirely in your browser." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="card">
+      <div class="brand">
+        <div class="logo">●</div>
+        <div>
+          <h1>RecSimple</h1>
+          <p>광고 없이, 브라우저에서 바로 녹음.</p>
+        </div>
+      </div>
+
+      <div class="notice">
+        녹음은 서버로 업로드되지 않습니다. 브라우저 안에서 처리됩니다.
+      </div>
+
+      <div class="options">
+        <label class="option">
+          <input id="systemAudio" type="checkbox" checked />
+          <span>
+            <strong>PC / 탭 소리</strong>
+            <small>화면 공유 창에서 반드시 “오디오 공유”를 켜세요.</small>
+          </span>
+        </label>
+        <label class="option">
+          <input id="micAudio" type="checkbox" />
+          <span>
+            <strong>마이크도 함께 녹음</strong>
+            <small>내 목소리까지 같이 저장합니다.</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="timer" id="timer">00:00:00</div>
+      <div class="status" id="status">준비됨</div>
+
+      <div class="controls">
+        <button id="startBtn" class="primary">● 녹음 시작</button>
+        <button id="pauseBtn" disabled>Ⅱ 일시정지</button>
+        <button id="stopBtn" disabled>■ 종료</button>
+      </div>
+
+      <div id="result" class="result hidden">
+        <audio id="preview" controls></audio>
+        <a id="downloadBtn" class="download" download>녹음 파일 저장</a>
+      </div>
+
+      <details>
+        <summary>Google Meet 녹음 방법</summary>
+        <ol>
+          <li>Meet을 켜둔 상태에서 <b>녹음 시작</b>을 누릅니다.</li>
+          <li>Chrome 공유 창에서 <b>Chrome 탭</b> 또는 <b>전체 화면</b>을 선택합니다.</li>
+          <li><b>탭 오디오 공유 / 시스템 오디오 공유</b>를 반드시 켭니다.</li>
+          <li>공유를 누르면 녹음이 시작됩니다.</li>
+          <li>회의가 끝나면 <b>종료</b> 후 파일을 저장합니다.</li>
+        </ol>
+      </details>
+
+      <p class="foot">Chrome / Edge 권장 · 녹음 전 10초 테스트 권장</p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
